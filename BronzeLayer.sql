@@ -100,3 +100,56 @@ CREATE OR REPLACE STAGE hospital_stage
 FILE_FORMAT = hospital_csv_format;
 
 SHOW STAGES;
+
+
+
+-- Synthetic data generation 
+
+-- Generate Data for ehr_raw
+INSERT INTO bronze.ehr_raw
+SELECT
+    seq4() + 1 AS patient_id,
+    'Patient_' || (seq4() + 1) AS name,
+    UNIFORM(18, 80, RANDOM()) AS age,
+    CASE 
+        WHEN UNIFORM(1, 2, RANDOM()) = 1 THEN 'Male'
+        ELSE 'Female'
+    END AS gender
+FROM TABLE(GENERATOR(ROWCOUNT => 50));
+
+
+
+-- Generate Data for vitals_raw
+INSERT INTO bronze.vitals_raw
+SELECT
+    TO_VARCHAR(UNIFORM(1, 50, RANDOM())) AS patientId,
+    TO_VARCHAR(UNIFORM(60, 140, RANDOM())) AS hr,   -- heart rate
+    TO_VARCHAR(UNIFORM(85, 100, RANDOM())) AS ox,   -- oxygen
+    TO_VARCHAR(UNIFORM(100, 180, RANDOM())) AS sys, -- systolic
+    TO_VARCHAR(UNIFORM(60, 120, RANDOM())) AS dia,  -- diastolic
+    TO_VARCHAR(CURRENT_TIMESTAMP()) AS timestamp
+FROM TABLE(GENERATOR(ROWCOUNT => 200));
+
+
+-- Generate Data for labs_raw
+INSERT INTO bronze.labs_raw
+SELECT
+    TO_VARCHAR(UNIFORM(1, 50, RANDOM())) AS patientId,
+    CASE 
+        WHEN UNIFORM(1, 3, RANDOM()) = 1 THEN 'Glucose'
+        WHEN UNIFORM(1, 3, RANDOM()) = 2 THEN 'Cholesterol'
+        ELSE 'Hemoglobin'
+    END AS test,
+    TO_VARCHAR(UNIFORM(50, 200, RANDOM())) AS value,
+    TO_VARCHAR(CURRENT_TIMESTAMP()) AS timestamp
+FROM TABLE(GENERATOR(ROWCOUNT => 150));
+
+
+-- Verify Data 
+SELECT * FROM bronze.ehr_raw LIMIT 10;
+SELECT * FROM bronze.vitals_raw LIMIT 10;
+SELECT * FROM bronze.labs_raw LIMIT 10;
+
+
+
+
